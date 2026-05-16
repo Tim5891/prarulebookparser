@@ -1,254 +1,96 @@
-// Scrape Structure Form
-const structureForm = document.getElementById('structureForm');
-const structureLoading = document.getElementById('structureLoading');
-const structureError = document.getElementById('structureError');
-const structureResults = document.getElementById('structureResults');
-let structureData = null;
+const runBtn = document.getElementById('runBtn');
+const statusBox = document.getElementById('statusBox');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+const errorDiv = document.getElementById('error');
+const resultsDiv = document.getElementById('results');
 
-structureForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+let allResults = {};
 
-    const date = document.getElementById('date').value;
-    const layer = document.getElementById('layer').value;
+runBtn.addEventListener('click', startScraping);
 
-    structureError.style.display = 'none';
-    structureResults.style.display = 'none';
-    structureLoading.style.display = 'block';
-
-    try {
-        const response = await fetch('/api/scrape-structure', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ date, layer })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Error scraping structure');
-        }
-
-        structureData = data;
-        displayStructureResults(data);
-    } catch (error) {
-        structureError.textContent = '❌ Error: ' + error.message;
-        structureError.style.display = 'block';
-    } finally {
-        structureLoading.style.display = 'none';
-    }
-});
-
-function displayStructureResults(data) {
-    document.getElementById('structureCount').textContent = `Found ${data.count} results`;
-
-    const table = document.getElementById('structureTable');
-    table.innerHTML = '';
-
-    // Create header
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    data.columns.forEach(col => {
-        const th = document.createElement('th');
-        th.textContent = col;
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    // Create body
-    const tbody = document.createElement('tbody');
-    data.rows.slice(0, 50).forEach(row => {
-        const tr = document.createElement('tr');
-        data.columns.forEach(col => {
-            const td = document.createElement('td');
-            const value = row[col];
-
-            if (col.includes('url') && value && value.startsWith('http')) {
-                const a = document.createElement('a');
-                a.href = value;
-                a.textContent = value;
-                a.target = '_blank';
-                td.appendChild(a);
-            } else {
-                td.textContent = value || '-';
-            }
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-
-    if (data.count > 50) {
-        const note = document.createElement('p');
-        note.style.marginTop = '10px';
-        note.style.color = '#6b7280';
-        note.textContent = `Showing first 50 of ${data.count} results`;
-        structureResults.appendChild(note);
-    }
-
-    structureResults.style.display = 'block';
-}
-
-document.getElementById('structureExportBtn').addEventListener('click', () => {
-    if (structureData) {
-        exportCSV(structureData.rows, `rulebook_structure_${new Date().getTime()}.csv`);
-    }
-});
-
-// Get Content Form
-const contentForm = document.getElementById('contentForm');
-const contentLoading = document.getElementById('contentLoading');
-const contentError = document.getElementById('contentError');
-const contentResults = document.getElementById('contentResults');
-let contentData = null;
-
-contentForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const url = document.getElementById('contentUrl').value;
-    const type = document.getElementById('contentType').value;
-    const singleRule = document.getElementById('singleRule').checked ? 'yes' : null;
-
-    contentError.style.display = 'none';
-    contentResults.style.display = 'none';
-    contentLoading.style.display = 'block';
+async function startScraping() {
+    runBtn.disabled = true;
+    statusBox.style.display = 'block';
+    errorDiv.style.display = 'none';
+    resultsDiv.style.display = 'none';
+    allResults = {};
 
     try {
-        const response = await fetch('/api/get-content', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                url,
-                type,
-                single_rule_selector: singleRule
-            })
-        });
+        // Step 1: Get latest rulebook date and scrape structure
+        progressText.textContent = '📊 Step 1/5: Getting rulebook structure...';
+        updateProgress(20);
 
-        const data = await response.json();
+        const structureResp = await fetch('/api/scrape-auto');
+        const structureData = await structureResp.json();
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Error fetching content');
+        if (!structureResp.ok) {
+            throw new Error(structureData.error || 'Failed to scrape structure');
         }
 
-        contentData = data;
-        displayContentResults(data);
+        allResults = structureData;
+
+        // Update progress as we go
+        updateProgress(100);
+        progressText.textContent = '✓ Scraping complete!';
+
+        displayResults();
     } catch (error) {
-        contentError.textContent = '❌ Error: ' + error.message;
-        contentError.style.display = 'block';
+        errorDiv.textContent = '❌ Error: ' + error.message;
+        errorDiv.style.display = 'block';
+        progressText.textContent = '✗ Scraping failed';
     } finally {
-        contentLoading.style.display = 'none';
+        runBtn.disabled = false;
     }
-});
-
-function displayContentResults(data) {
-    document.getElementById('contentCount').textContent = `Found ${data.count} results`;
-
-    const table = document.getElementById('contentTable');
-    table.innerHTML = '';
-
-    // Create header
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    data.columns.forEach(col => {
-        const th = document.createElement('th');
-        th.textContent = col;
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    // Create body
-    const tbody = document.createElement('tbody');
-    data.rows.slice(0, 50).forEach(row => {
-        const tr = document.createElement('tr');
-        data.columns.forEach(col => {
-            const td = document.createElement('td');
-            const value = row[col];
-
-            if (col.includes('url') && value && value.startsWith('http')) {
-                const a = document.createElement('a');
-                a.href = value;
-                a.textContent = value.substring(0, 60) + (value.length > 60 ? '...' : '');
-                a.target = '_blank';
-                a.title = value;
-                td.appendChild(a);
-            } else if (typeof value === 'boolean') {
-                td.textContent = value ? '✓' : '✗';
-            } else {
-                td.textContent = value || '-';
-            }
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-
-    if (data.count > 50) {
-        const note = document.createElement('p');
-        note.style.marginTop = '10px';
-        note.style.color = '#6b7280';
-        note.textContent = `Showing first 50 of ${data.count} results`;
-        contentResults.appendChild(note);
-    }
-
-    contentResults.style.display = 'block';
 }
 
-document.getElementById('contentExportBtn').addEventListener('click', () => {
-    if (contentData) {
-        const contentType = document.getElementById('contentType').value;
-        exportCSV(contentData.rows, `rulebook_${contentType}_${new Date().getTime()}.csv`);
-    }
-});
-
-// Export to CSV
-function exportCSV(rows, filename) {
-    if (!rows || rows.length === 0) {
-        alert('No data to export');
-        return;
-    }
-
-    const df = rows;
-    const headers = Object.keys(df[0]);
-
-    let csv = headers.join(',') + '\n';
-
-    df.forEach(row => {
-        const values = headers.map(header => {
-            const value = row[header];
-            if (value === null || value === undefined) {
-                return '';
-            }
-            const stringValue = String(value);
-            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-                return '"' + stringValue.replace(/"/g, '""') + '"';
-            }
-            return stringValue;
-        });
-        csv += values.join(',') + '\n';
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+function updateProgress(percent) {
+    progressFill.style.width = percent + '%';
 }
 
-// Auto-fill example URL when structure results are clicked
-document.addEventListener('click', (e) => {
-    if (e.target.tagName === 'A' && e.target.closest('table')) {
-        const href = e.target.getAttribute('href');
-        if (href && href.startsWith('http')) {
-            document.getElementById('contentUrl').value = href;
+function displayResults() {
+    const resultsList = document.getElementById('resultsList');
+    resultsList.innerHTML = '';
+
+    const items = [
+        { label: 'Sectors', key: 'sectors_count' },
+        { label: 'Parts', key: 'parts_count' },
+        { label: 'Chapters', key: 'chapters_count' },
+        { label: 'Rules', key: 'rules_count' },
+    ];
+
+    items.forEach(item => {
+        if (item.key in allResults) {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.innerHTML = `
+                <span class="result-label">${item.label}:</span>
+                <span class="result-value">${allResults[item.key]}</span>
+            `;
+            resultsList.appendChild(div);
         }
-    }
-});
+    });
+
+    // Add download buttons
+    const downloadBtns = document.getElementById('downloadButtons');
+    downloadBtns.innerHTML = '';
+
+    const files = [
+        { name: 'sectors.csv', url: '/api/download/sectors' },
+        { name: 'parts.csv', url: '/api/download/parts' },
+        { name: 'chapters.csv', url: '/api/download/chapters' },
+        { name: 'rules.csv', url: '/api/download/rules' },
+        { name: 'links.csv', url: '/api/download/links' },
+    ];
+
+    files.forEach(file => {
+        const btn = document.createElement('a');
+        btn.className = 'download-btn';
+        btn.href = file.url;
+        btn.download = file.name;
+        btn.textContent = `📥 ${file.name}`;
+        downloadBtns.appendChild(btn);
+    });
+
+    resultsDiv.style.display = 'block';
+}

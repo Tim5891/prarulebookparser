@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template, request, jsonify, send_file
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import io
 from prarulebook import get_structure, get_content, recode_layer
@@ -10,6 +10,9 @@ __version__ = "1.0.0"
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
+# Store scrape results
+SCRAPE_RESULTS = {}
+
 
 @app.route('/')
 def index():
@@ -17,81 +20,105 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/scrape-structure', methods=['POST'])
-def scrape_structure():
-    """Scrape rulebook structure."""
+@app.route('/api/scrape-auto', methods=['POST'])
+def scrape_auto():
+    """Automatically scrape entire rulebook with default settings."""
     try:
-        data = request.get_json()
-        rulebook_date = data.get('date')
-        layer = data.get('layer', 'chapter')
+        print("Starting automatic scrape...")
 
-        if not rulebook_date:
-            return jsonify({'error': 'Date is required'}), 400
+        # Use today's date or a recent date if today doesn't work
+        today = datetime.today()
+        rulebook_date = today.strftime("%d-%m-%Y")
 
-        # Validate date format
-        try:
-            datetime.strptime(rulebook_date, "%d-%m-%Y")
-        except ValueError:
-            return jsonify({'error': 'Invalid date format. Use dd-mm-yyyy'}), 400
+        print(f"Scraping with date: {rulebook_date}")
 
-        if layer not in ['sector', 'part', 'chapter', 'rule']:
-            return jsonify({'error': 'Invalid layer'}), 400
+        # Scrape structure at chapter level
+        print("Getting chapters...")
+        chapters = get_structure(rulebook_date, layer="chapter")
+        chapters_count = len(chapters)
+        print(f"  Found {chapters_count} chapters")
 
-        print(f"Scraping structure for {rulebook_date} at {layer} level...")
-        structure = get_structure(rulebook_date, layer=layer)
+        # Get parts and sectors from the same structure
+        print("Getting parts and sectors...")
+        parts = chapters[['part_name', 'part_url', 'sector_name', 'sector_url']].drop_duplicates()
+        parts_count = len(parts)
+        sectors = chapters[['sector_name', 'sector_url']].drop_duplicates()
+        sectors_count = len(sectors)
+        print(f"  Found {sectors_count} sectors, {parts_count} parts")
 
-        # Convert to JSON-serializable format
+        # Scrape text content from first 50 chapters (to keep it reasonable)
+        print("Getting rule text...")
+        rules_text = []
+        for i, chapter_url in enumerate(chapters['chapter_url'][:50]):
+            if pd.notna(chapter_url):
+                try:
+                    text = get_content(chapter_url, content_type="text")
+                    rules_text.append(text)
+                except Exception as e:
+                    print(f"  Error on chapter {i+1}: {str(e)}")
+                    continue
+
+        if rules_text:
+            rules_df = pd.concat(rules_text, ignore_index=True)
+            rules_count = len(rules_df)
+        else:
+            rules_df = pd.DataFrame()
+            rules_count = 0
+        print(f"  Found {rules_count} rules")
+
+        # Scrape links from first 30 chapters
+        print("Getting links...")
+        links_data = []
+        for i, chapter_url in enumerate(chapters['chapter_url'][:30]):
+            if pd.notna(chapter_url):
+                try:
+                    links = get_content(chapter_url, content_type="links")
+                    links_data.append(links)
+                except Exception as e:
+                    print(f"  Error getting links for chapter {i+1}: {str(e)}")
+                    continue
+
+        if links_data:
+            links_df = pd.concat(links_data, ignore_index=True)
+        else:
+            links_df = pd.DataFrame()
+
+        # Store results globally for download
+        SCRAPE_RESULTS['sectors'] = sectors
+        SCRAPE_RESULTS['parts'] = parts
+        SCRAPE_RESULTS['chapters'] = chapters
+        SCRAPE_RESULTS['rules'] = rules_df
+        SCRAPE_RESULTS['links'] = links_df
+
         result = {
-            'rows': structure.to_dict('records'),
-            'columns': list(structure.columns),
-            'count': len(structure)
+            'sectors_count': sectors_count,
+            'parts_count': parts_count,
+            'chapters_count': chapters_count,
+            'rules_count': rules_count,
+            'links_count': len(links_df),
+            'date': rulebook_date
         }
 
+        print("Scraping complete!")
         return jsonify(result)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        print(f"Error: {error_msg}")
+        return jsonify({'error': error_msg}), 500
 
 
-@app.route('/api/get-content', methods=['POST'])
-def get_content_route():
-    """Get content (text or links) from a URL."""
+@app.route('/api/download/<dtype>')
+def download_data(dtype):
+    """Download scraped data as CSV."""
     try:
-        data = request.get_json()
-        url = data.get('url')
-        content_type = data.get('type', 'text')
-        single_rule = data.get('single_rule_selector')
+        if dtype not in SCRAPE_RESULTS:
+            return jsonify({'error': f'No {dtype} data available'}), 404
 
-        if not url:
-            return jsonify({'error': 'URL is required'}), 400
+        df = SCRAPE_RESULTS[dtype]
 
-        print(f"Fetching {content_type} from {url}...")
-        content = get_content(url, content_type=content_type, single_rule_selector=single_rule)
-
-        result = {
-            'rows': content.to_dict('records'),
-            'columns': list(content.columns),
-            'count': len(content)
-        }
-
-        return jsonify(result)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/export-csv', methods=['POST'])
-def export_csv():
-    """Export data as CSV."""
-    try:
-        data = request.get_json()
-        rows = data.get('rows')
-        filename = data.get('filename', 'export.csv')
-
-        if not rows:
-            return jsonify({'error': 'No data to export'}), 400
-
-        df = pd.DataFrame(rows)
+        if df.empty:
+            return jsonify({'error': f'No {dtype} data to download'}), 404
 
         # Create CSV in memory
         output = io.StringIO()
@@ -101,7 +128,7 @@ def export_csv():
         return app.response_class(
             output.getvalue(),
             mimetype='text/csv',
-            headers={'Content-Disposition': f'attachment; filename={filename}'}
+            headers={'Content-Disposition': f'attachment; filename=rulebook_{dtype}.csv'}
         )
 
     except Exception as e:

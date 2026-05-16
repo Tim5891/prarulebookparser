@@ -14,7 +14,7 @@
     --card-bg: #ffffff;
     --text-color: #111827;
     --border-color: #e5e7eb;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
@@ -26,7 +26,7 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -60,39 +60,38 @@ main {
 .card {
     background: var(--card-bg);
     border-radius: 12px;
-    padding: 30px;
+    padding: 40px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
 }
 
 .card h2 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     margin-bottom: 20px;
     color: var(--primary-color);
 }
 
 .card h3 {
-    font-size: 1.2rem;
-    margin-top: 20px;
+    font-size: 1.3rem;
+    margin-top: 25px;
     margin-bottom: 15px;
     color: var(--primary-color);
 }
 
-.card ul, .card ol {
+.card h4 {
+    font-size: 1.1rem;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.card ul {
     margin-left: 20px;
     margin-bottom: 15px;
 }
 
 .card li {
     margin-bottom: 10px;
-}
-
-.card code {
-    background-color: var(--bg-color);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-family: 'Monaco', 'Courier New', monospace;
-    font-size: 0.9rem;
 }
 
 .card a {
@@ -104,60 +103,19 @@ main {
     text-decoration: underline;
 }
 
-/* Form Styles */
-form {
-    display: grid;
-    gap: 20px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group label {
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--text-color);
-}
-
-.form-group input[type="text"],
-.form-group input[type="email"],
-.form-group select {
-    padding: 10px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.form-group input[type="text"]:focus,
-.form-group input[type="email"]:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.form-group small {
-    font-size: 0.85rem;
+.description {
+    font-size: 1.05rem;
     color: #6b7280;
-    margin-top: 4px;
+    margin-bottom: 30px;
 }
 
-.form-group input[type="checkbox"] {
-    margin-right: 8px;
-}
-
-/* Button Styles */
+/* Button */
 .btn {
-    padding: 12px 24px;
     border: none;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s;
     display: inline-block;
 }
 
@@ -166,133 +124,143 @@ form {
     color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background-color: #1e40af;
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
 }
 
-.btn-primary:active {
+.btn-primary:active:not(:disabled) {
     transform: translateY(0);
 }
 
-.btn-secondary {
-    background-color: var(--secondary-color);
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: #2563eb;
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
+.btn-large {
+    padding: 20px 50px;
+    font-size: 1.2rem;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    display: block;
 }
 
 .btn:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
-    transform: none !important;
 }
 
-/* Results Styles */
-.results {
-    margin-top: 30px;
-    padding-top: 30px;
-    border-top: 2px solid var(--border-color);
-}
-
-.results h3 {
-    color: var(--success-color);
-    margin-bottom: 15px;
-}
-
-.results p {
-    font-size: 0.95rem;
-    color: #6b7280;
-    margin-bottom: 15px;
-}
-
-.table-wrapper {
-    overflow-x: auto;
-    margin-bottom: 20px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-
-table thead {
+/* Status and Progress */
+.status-box {
     background-color: var(--bg-color);
-    border-bottom: 2px solid var(--border-color);
-}
-
-table th {
-    padding: 12px;
-    text-align: left;
-    font-weight: 600;
-    color: var(--primary-color);
-}
-
-table td {
-    padding: 12px;
-    border-bottom: 1px solid var(--border-color);
-    word-break: break-word;
-}
-
-table tr:hover {
-    background-color: var(--bg-color);
-}
-
-table a {
-    color: var(--secondary-color);
-    text-decoration: none;
-}
-
-table a:hover {
-    text-decoration: underline;
-}
-
-/* Loading State */
-.loading {
-    padding: 30px;
-    text-align: center;
-    background-color: var(--bg-color);
-    border-radius: 6px;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
     border: 1px solid var(--border-color);
 }
 
-.loading p {
+#progressText {
     font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 15px;
     color: var(--warning-color);
 }
 
-.loading::after {
-    content: '';
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    margin-left: 10px;
-    border: 3px solid var(--border-color);
-    border-top-color: var(--warning-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+.progress-bar {
+    width: 100%;
+    height: 30px;
+    background-color: var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+    width: 0%;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
 }
 
-/* Error State */
+/* Error */
 .error {
     padding: 20px;
     background-color: #fee2e2;
     border: 1px solid #fca5a5;
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--danger-color);
     margin-bottom: 20px;
+}
+
+/* Results */
+.results {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid var(--success-color);
+}
+
+.results h3 {
+    color: var(--success-color);
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+}
+
+#resultsList {
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color);
+}
+
+.result-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.result-item:last-child {
+    border-bottom: none;
+}
+
+.result-label {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.result-value {
+    color: var(--text-color);
+}
+
+.download-section h4 {
+    margin-top: 0;
+}
+
+#downloadButtons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.download-btn {
+    padding: 12px 20px;
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.download-btn:hover {
+    background-color: #059669;
+    box-shadow: var(--shadow-lg);
 }
 
 /* Info Section */
@@ -301,7 +269,7 @@ table a:hover {
     border: 1px solid #bfdbfe;
 }
 
-.info h2, .info h3 {
+.info h2, .info h3, .info h4 {
     color: var(--primary-color);
 }
 
@@ -333,16 +301,12 @@ footer a:hover {
         padding: 20px;
     }
 
-    table {
-        font-size: 0.8rem;
+    .btn-large {
+        padding: 15px 30px;
+        font-size: 1.1rem;
     }
 
-    table th, table td {
-        padding: 8px;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        font-size: 0.95rem;
+    #downloadButtons {
+        grid-template-columns: 1fr;
     }
 }
