@@ -32,17 +32,30 @@ def scrape_auto():
 
         # Scrape structure at chapter level
         print("Getting chapters...")
+        print(f"  Calling get_structure({rulebook_date}, layer='chapter')...")
         chapters = get_structure(rulebook_date, layer="chapter")
+        print(f"  Type of chapters: {type(chapters)}")
+        print(f"  Chapters shape: {chapters.shape if hasattr(chapters, 'shape') else 'N/A'}")
+        print(f"  Chapters columns: {list(chapters.columns) if hasattr(chapters, 'columns') else 'N/A'}")
         chapters_count = len(chapters)
         print(f"  Found {chapters_count} chapters")
+        if chapters_count == 0:
+            print(f"  WARNING: No chapters found! Chapters content: {chapters}")
 
         # Get parts and sectors from the same structure
         print("Getting parts and sectors...")
-        parts = chapters[['part_name', 'part_url', 'sector_name', 'sector_url']].drop_duplicates()
-        parts_count = len(parts)
-        sectors = chapters[['sector_name', 'sector_url']].drop_duplicates()
-        sectors_count = len(sectors)
-        print(f"  Found {sectors_count} sectors, {parts_count} parts")
+        try:
+            parts = chapters[['part_name', 'part_url', 'sector_name', 'sector_url']].drop_duplicates()
+            parts_count = len(parts)
+            sectors = chapters[['sector_name', 'sector_url']].drop_duplicates()
+            sectors_count = len(sectors)
+            print(f"  Found {sectors_count} sectors, {parts_count} parts")
+        except Exception as e:
+            print(f"  Error extracting parts/sectors: {e}")
+            parts = pd.DataFrame()
+            sectors = pd.DataFrame()
+            parts_count = 0
+            sectors_count = 0
 
         # Scrape text content from first 10 chapters (to keep it reasonable)
         print("Getting rule text...")
