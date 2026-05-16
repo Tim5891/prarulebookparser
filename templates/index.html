@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRA Rulebook Parser</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏦 PRA Rulebook Parser</h1>
+            <p>Scrape and analyze the Prudential Regulation Authority Rulebook</p>
+        </header>
+
+        <main>
+            <!-- Scrape Structure Section -->
+            <section class="card">
+                <h2>1. Scrape Rulebook Structure</h2>
+                <form id="structureForm">
+                    <div class="form-group">
+                        <label for="date">Rulebook Date</label>
+                        <input
+                            type="text"
+                            id="date"
+                            name="date"
+                            placeholder="dd-mm-yyyy"
+                            required
+                        >
+                        <small>Format: dd-mm-yyyy (e.g., 18-06-2019)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="layer">Layer to Scrape</label>
+                        <select id="layer" name="layer">
+                            <option value="sector">Sector</option>
+                            <option value="part">Part</option>
+                            <option value="chapter" selected>Chapter</option>
+                            <option value="rule">Rule</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Scrape Structure</button>
+                </form>
+
+                <div id="structureLoading" class="loading" style="display: none;">
+                    <p>⏳ Scraping... This may take a minute...</p>
+                </div>
+
+                <div id="structureError" class="error" style="display: none;"></div>
+
+                <div id="structureResults" class="results" style="display: none;">
+                    <h3>Results</h3>
+                    <p id="structureCount"></p>
+                    <div class="table-wrapper">
+                        <table id="structureTable"></table>
+                    </div>
+                    <button id="structureExportBtn" class="btn btn-secondary">📥 Export as CSV</button>
+                </div>
+            </section>
+
+            <!-- Get Content Section -->
+            <section class="card">
+                <h2>2. Get Content (Text or Links)</h2>
+                <form id="contentForm">
+                    <div class="form-group">
+                        <label for="contentUrl">URL to Scrape</label>
+                        <input
+                            type="text"
+                            id="contentUrl"
+                            name="url"
+                            placeholder="http://www.prarulebook.co.uk/..."
+                            required
+                        >
+                        <small>Paste a URL from the structure results above</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contentType">Content Type</label>
+                        <select id="contentType" name="type">
+                            <option value="text" selected>Text</option>
+                            <option value="links">Links (Network)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="singleRule" name="single_rule">
+                            Single Rule URL
+                        </label>
+                        <small>Check this if scraping an individual rule</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Get Content</button>
+                </form>
+
+                <div id="contentLoading" class="loading" style="display: none;">
+                    <p>⏳ Fetching content... This may take a minute...</p>
+                </div>
+
+                <div id="contentError" class="error" style="display: none;"></div>
+
+                <div id="contentResults" class="results" style="display: none;">
+                    <h3>Results</h3>
+                    <p id="contentCount"></p>
+                    <div class="table-wrapper">
+                        <table id="contentTable"></table>
+                    </div>
+                    <button id="contentExportBtn" class="btn btn-secondary">📥 Export as CSV</button>
+                </div>
+            </section>
+
+            <!-- Info Section -->
+            <section class="card info">
+                <h2>ℹ️ Help</h2>
+                <h3>How to use:</h3>
+                <ol>
+                    <li><strong>Step 1:</strong> Enter a date in dd-mm-yyyy format and select a layer (sector, part, chapter, or rule)</li>
+                    <li><strong>Step 2:</strong> Click "Scrape Structure" to get the rulebook hierarchy</li>
+                    <li><strong>Step 3:</strong> Copy a URL from the results and paste it in Step 2</li>
+                    <li><strong>Step 4:</strong> Select content type (text for reading, links for network analysis)</li>
+                    <li><strong>Step 5:</strong> Click "Get Content" to extract the data</li>
+                    <li><strong>Step 6:</strong> Export results as CSV for further analysis</li>
+                </ol>
+
+                <h3>Available Dates:</h3>
+                <p>Any date from <strong>01-01-2005</strong> to today in dd-mm-yyyy format</p>
+
+                <h3>Data Formats:</h3>
+                <ul>
+                    <li><strong>Structure:</strong> Hierarchy with sector, part, chapter names and URLs</li>
+                    <li><strong>Text:</strong> Rule numbers and text content</li>
+                    <li><strong>Links:</strong> Network data (from/to URLs and link types) for network analysis</li>
+                </ul>
+
+                <h3>Examples:</h3>
+                <ul>
+                    <li><code>16-11-2007</code> - Early handbook date</li>
+                    <li><code>29-08-2015</code> - Transition from Handbook to Rulebook</li>
+                    <li><code>18-06-2019</code> - Recent rulebook snapshot</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>
+                <a href="https://github.com/Tim5891/prarulebookparser" target="_blank">GitHub</a> •
+                <a href="https://www.prarulebook.co.uk/terms-of-use" target="_blank">PRA Terms of Use</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
