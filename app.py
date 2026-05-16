@@ -20,16 +20,14 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/scrape-auto', methods=['POST'])
+@app.route('/api/scrape-auto', methods=['GET', 'POST'])
 def scrape_auto():
     """Automatically scrape entire rulebook with default settings."""
     try:
         print("Starting automatic scrape...")
 
-        # Use today's date or a recent date if today doesn't work
-        today = datetime.today()
-        rulebook_date = today.strftime("%d-%m-%Y")
-
+        # Use a known good date - 18-06-2019 is a stable snapshot
+        rulebook_date = "18-06-2019"
         print(f"Scraping with date: {rulebook_date}")
 
         # Scrape structure at chapter level
@@ -103,9 +101,11 @@ def scrape_auto():
         return jsonify(result)
 
     except Exception as e:
+        import traceback
         error_msg = str(e)
         print(f"Error: {error_msg}")
-        return jsonify({'error': error_msg}), 500
+        print(traceback.format_exc())
+        return jsonify({'error': f'Scraping failed: {error_msg}'}), 500
 
 
 @app.route('/api/download/<dtype>')
