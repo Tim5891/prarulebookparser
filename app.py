@@ -5,6 +5,8 @@ import pandas as pd
 import io
 from prarulebook import get_structure, get_content, recode_layer
 
+__version__ = "1.0.0"
+
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
@@ -109,7 +111,7 @@ def export_csv():
 @app.route('/health')
 def health():
     """Health check endpoint for Railway."""
-    return jsonify({'status': 'ok'})
+    return jsonify({'status': 'ok', 'version': __version__})
 
 
 @app.errorhandler(404)
