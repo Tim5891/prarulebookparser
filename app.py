@@ -44,26 +44,25 @@ def scrape_auto():
         sectors_count = len(sectors)
         print(f"  Found {sectors_count} sectors, {parts_count} parts")
 
-        # Scrape text content from first 30 chapters (to keep it reasonable)
+        # Scrape text content from first 10 chapters (to keep it reasonable)
         print("Getting rule text...")
         rules_text = []
-        for i, chapter_url in enumerate(chapters['chapter_url'][:30]):
+        for i, chapter_url in enumerate(chapters['chapter_url'][:10]):
             if pd.notna(chapter_url):
                 try:
+                    print(f"  Processing chapter {i+1}...")
                     text = get_content(chapter_url, content_type="text")
                     if text is not None and not text.empty:
+                        # Convert all columns to string to avoid type issues
+                        for col in text.columns:
+                            text[col] = text[col].astype(str)
                         rules_text.append(text)
                 except Exception as e:
-                    print(f"  Skipping chapter {i+1}: {str(e)}")
+                    print(f"  Skipping chapter {i+1}: {type(e).__name__}: {str(e)}")
                     continue
 
         if rules_text:
             rules_df = pd.concat(rules_text, ignore_index=True)
-            # Clean up the data
-            if 'rule_number' in rules_df.columns:
-                rules_df['rule_number'] = rules_df['rule_number'].astype(str)
-            if 'rule_text' in rules_df.columns:
-                rules_df['rule_text'] = rules_df['rule_text'].astype(str)
             rules_count = len(rules_df)
         else:
             rules_df = pd.DataFrame()

@@ -215,7 +215,7 @@ def scrape_part_structure(df: pd.DataFrame) -> pd.DataFrame:
         parts = pd.DataFrame({'name': [], 'menu_url': [], 'provided_url': []})
 
     parts.columns = ["part_name", "part_url", "sector_url"]
-    parts['part_name'] = parts['part_name'].str.strip()
+    parts['part_name'] = parts['part_name'].astype(str).str.strip()
 
     # Join with sector names
     parts_sectors = parts.merge(df, on="sector_url", how="left")
@@ -253,7 +253,7 @@ def scrape_chapter_structure(df: pd.DataFrame) -> pd.DataFrame:
     chapters.columns = ["chapter_name", "chapter_url", "part_url"]
 
     # Clean chapter names
-    chapters['chapter_name'] = chapters['chapter_name'].str.replace(r'[\r\n]', ' ', regex=True)
+    chapters['chapter_name'] = chapters['chapter_name'].astype(str).str.replace(r'[\r\n]', ' ', regex=True)
     chapters['chapter_name'] = chapters['chapter_name'].str.replace(r'\s+', ' ', regex=True).str.strip()
 
     # Remove chapters with no URL
