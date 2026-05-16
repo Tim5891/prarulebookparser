@@ -44,36 +44,43 @@ def scrape_auto():
         sectors_count = len(sectors)
         print(f"  Found {sectors_count} sectors, {parts_count} parts")
 
-        # Scrape text content from first 50 chapters (to keep it reasonable)
+        # Scrape text content from first 30 chapters (to keep it reasonable)
         print("Getting rule text...")
         rules_text = []
-        for i, chapter_url in enumerate(chapters['chapter_url'][:50]):
+        for i, chapter_url in enumerate(chapters['chapter_url'][:30]):
             if pd.notna(chapter_url):
                 try:
                     text = get_content(chapter_url, content_type="text")
-                    rules_text.append(text)
+                    if text is not None and not text.empty:
+                        rules_text.append(text)
                 except Exception as e:
-                    print(f"  Error on chapter {i+1}: {str(e)}")
+                    print(f"  Skipping chapter {i+1}: {str(e)}")
                     continue
 
         if rules_text:
             rules_df = pd.concat(rules_text, ignore_index=True)
+            # Clean up the data
+            if 'rule_number' in rules_df.columns:
+                rules_df['rule_number'] = rules_df['rule_number'].astype(str)
+            if 'rule_text' in rules_df.columns:
+                rules_df['rule_text'] = rules_df['rule_text'].astype(str)
             rules_count = len(rules_df)
         else:
             rules_df = pd.DataFrame()
             rules_count = 0
         print(f"  Found {rules_count} rules")
 
-        # Scrape links from first 30 chapters
+        # Scrape links from first 20 chapters
         print("Getting links...")
         links_data = []
-        for i, chapter_url in enumerate(chapters['chapter_url'][:30]):
+        for i, chapter_url in enumerate(chapters['chapter_url'][:20]):
             if pd.notna(chapter_url):
                 try:
                     links = get_content(chapter_url, content_type="links")
-                    links_data.append(links)
+                    if links is not None and not links.empty:
+                        links_data.append(links)
                 except Exception as e:
-                    print(f"  Error getting links for chapter {i+1}: {str(e)}")
+                    print(f"  Skipping links for chapter {i+1}: {str(e)}")
                     continue
 
         if links_data:

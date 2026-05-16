@@ -238,7 +238,8 @@ def _get_content_text(
             'url': [url] * len(nodes_text)
         })
 
-        # Mark inactive rules
+        # Mark inactive rules (ensure string type first)
+        df['rule_number'] = df['rule_number'].astype(str)
         df['active'] = ~df['rule_number'].str.contains("Inactive date", regex=True, na=False)
 
         return df
